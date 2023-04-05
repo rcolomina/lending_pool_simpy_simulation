@@ -127,3 +127,10 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+
+# Java Script
+node_modules*
+
+# Emacs Backups
+*~
