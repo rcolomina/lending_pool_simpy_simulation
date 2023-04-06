@@ -1,0 +1,5 @@
+simpy==4.0.1
+mesa==1.2.1
+matplotlib
+web3
+

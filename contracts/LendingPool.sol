@@ -1,5 +1,3 @@
-// SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.10;
 
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
@@ -18,13 +16,14 @@ contract LendingPool {
     //uint256 public constant LIQUIDATION_REWARD = 5; // 5%
     uint256 public constant MIN_HEALTH_FACTOR = 1e18;
 
-    // USE uint256 instead of bool to save gas
+    // Use uint256 instead of bool to save gas
     // paused = 1 && active = 2
     uint256 public paused = 1;
     address public manager;
 
     struct SupportedERC20 {
-        address daiPriceFeed;
+        //address daiPriceFeed;
+        uint256 lastDaiPriceKnown;
         bool supported;
     }
 
@@ -315,13 +314,16 @@ contract LendingPool {
     {
         vault = vaults[token];
     }
+    
+    function getTokenPrice(address token)
+        public
+        view
+        returns (uint256 tokenDaiPrice) {
 
-    function getTokenPrice(address token) public view returns (uint256) {
+        tokenDaiPrice = supportedTokens[token].lastDaiPriceKnown;
 
-            
-            return uint256(42); // amount of Dai
-            
-            /*AggregatorV3Interface priceFeed = AggregatorV3Interface(
+        // TODO: Add price feed oracle        
+        /*AggregatorV3Interface priceFeed = AggregatorV3Interface(
             supportedTokens[token].daiPriceFeed
         );
         (, int256 price, , , ) = priceFeed.latestRoundData();
@@ -330,6 +332,7 @@ contract LendingPool {
     }
 
     function getTokenInterestRate(address token) public view returns (uint256) {
+        
         return vaults[token].interestRateInfo.ratePerSec;
     }
 
@@ -439,7 +442,7 @@ contract LendingPool {
 
     //--------------------------------------------------------------------
     /** OWNER FUNCTIONS */
-
+    
     function setPaused(uint256 _state) external {
         if (msg.sender != manager) revert OnlyManager();
         if (_state == 1 || _state == 2) paused = _state;
@@ -449,10 +452,25 @@ contract LendingPool {
         if (msg.sender != manager) revert OnlyManager();
         if (supportedTokens[token].supported) revert AlreadySupported(token);
 
-        supportedTokens[token].daiPriceFeed = priceFeed;
+        supportedTokens[token].lastDaiPriceKnown = 42; // default value
+
+        //supportedTokens[token].daiPriceFeed = priceFeed;
         supportedTokens[token].supported = true;
+        
         supportedTokensList.push(token);
 
         emit AddSupportedToken(token);
     }
+
+    //----------------------------------------------------------------
+    /** SIMULATION **/
+    // WARNING!!!
+    // These function are here just to simulate changes on the contract parameters
+    // and not for real deployment. Comment these out.    
+    function setTokenPrice(address token, uint256 amount) external {
+        if (msg.sender != manager) revert OnlyManager();
+        supportedTokens[token].lastDaiPriceKnown = amount;
+    }
+
+    
 }

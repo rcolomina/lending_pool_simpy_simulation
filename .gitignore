@@ -134,3 +134,7 @@ node_modules*
 
 # Emacs Backups
 *~
+
+# Solidity
+artifacts/*
+typechain-types/*
