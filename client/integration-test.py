@@ -8,7 +8,7 @@ class UserLendingPool:
         self.name = name
         self.address = address
     def __str__(self):
-        return f"Name of user is '{self.name}' with address '{self.address}'"
+        return f"user name='{self.name}'|user address='{self.address}'"
     
 
 
@@ -74,10 +74,19 @@ def setup_contracts(manager):
         try:
             add_supported_token_1(token_address,contract_lending_pool)
         except Exception as e:
-            print(f"{e} This error can be safely ignored")
+            print(f"{e} \n This error can be safely ignored")
         
     return contract_lending_pool, contract_token
     
+
+
+def repay(user, contract, token, amount):
+    print(f"Repaying {amount} from {user.name} on token {token.address}")
+    tx_hash = token.functions.approve(contract.address,amount).transact({'from':user.address})
+    contract.functions.repay(token.address, amount).transact({'from':user.address})    
+    user_data = contract.functions.getUserData(user.address).call()
+    print_user_data(user.name, user_data)
+
 
 
 if __name__ == "__main__":
@@ -89,35 +98,30 @@ if __name__ == "__main__":
     print(str(manager))
     print(str(alice))
 
-    #print("Manager's contract address: ",manager.address)
-    #print("Alice's address: ",alice.address)
-
-    # get the contract objects
+    # get contract objects for the lending pool and test token
     contract_lending_pool, contract_token = setup_contracts(manager)
 
-    # token name
+    # token info
     token_name = contract_token.functions.name().call()
-
-    # token decimals
     decimals = contract_token.functions.decimals().call()
-    print(f"No. of decimals of the token {token_name}: {decimals}")
-    DECIMALS = 10 ** decimals # get this from ERC20
+    print(f"No. of decimals for token {token_name}: {decimals}")
+    DECIMALS = 10 ** decimals 
 
-    # check balance of the users on tokens
-    print(f"Manager's contract  balance of {token_name} is ",
-          contract_token.functions.balanceOf(manager.address).call() // DECIMALS)
-    print(f"Alice's balance on token {token_name} is ",
-          contract_token.functions.balanceOf(alice.address).call() // DECIMALS)
+    # check token balance of the users
+    for user in [manager, alice]:
+        print(f"{user.name}'s contract  balance of {token_name} is ",
+              contract_token.functions.balanceOf(user.address).call() // DECIMALS)
 
     # transfer some coins to a user
-    amount_to_transfer = 10000
+    amount_to_transfer = 1000 * DECIMALS
 
 
-    #print(token_name)
     token_address = contract_token.address
-    print(f"Transfering {amount_to_transfer} units of token {token_name} from {manager.name} to {alice.name}")
+    print(f"Transfering {amount_to_transfer // DECIMALS} units of token ",
+          f"{token_name} from {manager.name} to {alice.name}")
+    
     tx_hash = contract_token.functions.transfer(alice.address,
-                                                amount_to_transfer * DECIMALS).transact({'from': manager.address})
+                                                amount_to_transfer).transact({'from': manager.address})
     
     
     print(f"Manager's contract  balance for token {contract_token.address}",
@@ -143,17 +147,9 @@ if __name__ == "__main__":
     allowance = contract_token.functions.allowance(manager.address,
                                                    contract_lending_pool.address).call({'from':manager.address})
     
-    print(f"Allowance for the contract {contract_lending_pool.address} to spend on behalf of user '{manager.name}':",
+    print(f"Allowance for the contract {contract_lending_pool.address}",
+          f" to spend on behalf of user '{manager.name}':",
           allowance // DECIMALS," units")
-
-
-    interest_rate = contract_lending_pool.functions.getTokenInterestRate(contract_token.address).call()
-    print(f"Current interest rate of token {contract_token.address} =",interest_rate)
-
-
-
-
-
 
     contract_lending_pool.functions.supply(contract_token.address,
                                            amount).transact({'from':manager.address})
@@ -163,52 +159,48 @@ if __name__ == "__main__":
     user_data = contract_lending_pool.functions.getUserData(manager.address).call()
     print(f"Total collateral of user {manager.address}", user_data[0] // DECIMALS," Dai")
 
+    ## Borrow
     amount_to_borrow = int(2.5 * DECIMALS)
     print_action("Manager",
                  "borrowing",
                  amount_to_borrow // DECIMALS,
                  contract_token.address)
     
-    tx_hash = contract_lending_pool.functions.borrow(contract_token.address, amount_to_borrow).transact()
+    tx_hash = contract_lending_pool.functions.borrow(contract_token.address,
+                                                     amount_to_borrow).transact()
     print_receipt(tx_hash, "borrow")
     
 
     user_data = contract_lending_pool.functions.getUserData(manager.address).call()
-    #print(user_data)
     print_user_data("manage", user_data)
 
 
-    
-    user = alice.address
-    user_data = contract_lending_pool.functions.getUserData(user).call()
 
-    print_user_data("alice", user_data)
-
-
-
-    price = contract_lending_pool.functions.getTokenPrice(contract_token.address).call()
-
-    # try to borrow without collateral
-    try:
-        contract_lending_pool.functions.borrow(contract_token.address, amount_to_borrow).transact({'from':user})
-    except Exception as e:
-        print("Borrowing cannot be done without collateral",e)
-
-        ## TODO: Add collateral and retry
-
-
-
-    ## Repay
-    def repay(user, contract, token, amount):
-        print(f"Repaying {amount} from {user.name} on token {token.address}")
-        tx_hash = token.functions.approve(contract.address,amount).transact({'from':user.address})
-        contract.functions.repay(token.address, amount).transact({'from':user.address})    
-        user_data = contract.functions.getUserData(user.address).call()
-        print_user_data(user.name, user_data)
-
-        
-    repay(manager, contract_lending_pool, contract_token, 2 * DECIMALS)
+    ## Repay        
+    repay(manager,
+          contract_lending_pool,
+          contract_token,
+          2 * DECIMALS)
 
     print("Health Factor (3 good, less than 1 => liquidation) \n",
           contract_lending_pool.functions.healthFactor(manager.address).call() // DECIMALS / 100),
+
+
+
+    # try to borrow without collateral
+    user = alice.address
+    user_data = contract_lending_pool.functions.getUserData(user).call()
+    print_user_data("alice", user_data)
+
+    price = contract_lending_pool.functions.getTokenPrice(contract_token.address).call()
+
     
+    try:
+        contract_lending_pool.functions.borrow(contract_token.address,
+                                               amount_to_borrow).transact({'from':user})
+    except Exception as e:
+        print("Borrowing cannot be done without collateral",e,
+              "\n This error can be safely ignored")
+
+        ## TODO: Add collateral and retry
+
