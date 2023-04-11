@@ -336,6 +336,18 @@ contract LendingPool {
         return vaults[token].interestRateInfo.ratePerSec;
     }
 
+    function getTokenTotalAssetsAmount(address token) public view returns (uint256) {
+
+        return vaults[token].totalAsset.amount;
+    }
+
+    function getTokenTotalBorrowAmount(address token) public view returns (uint256) {
+
+        return vaults[token].totalBorrow.amount;
+    }
+
+    
+    
     //--------------------------------------------------------------------
     /** INTERNAL FUNCTIONS */
 
