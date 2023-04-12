@@ -47,7 +47,7 @@ class SetupContracts:
 
         self.path_to_contract_address = "../"
 
-    def _unpause_contract(self,contract_lending_pool):
+    def _unpause_contract(self, contract_lending_pool):
         ### unpause the contract
         if self.owner is not None:
             tx_hash = contract_lending_pool.functions.setPaused(2).transact({'from':self.owner.address})

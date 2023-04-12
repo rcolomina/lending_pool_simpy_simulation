@@ -1,6 +1,6 @@
 from enums import RiskTolerance
 from enums import MarketDirectionBelieve
-
+from enums import InterestRatePref
 
 
 
@@ -32,13 +32,38 @@ def get_percentage_on_amount_to_deposit(interest_rate,
     return min(max_deposit, model)
 
 
-def get_loan_size_on_borrower(total_collateral,risk_tolerance):
 
-    if risk_tolerance == RiskTolerance.high:
-        return total_collateral * 0.75
-    if risk_tolerance == RiskTolerance.medium:
-        return total_collateral * 0.50
-    if risk_tolerance == RiskTolerance.low:
-        return total_collateral * 0.25
 
+def max_percentage_of_collateral(risk_tolerance,
+                                 lp = 0.3, mp = 0.5, hp = 0.7):
+
+    return lp if risk_tolerance==RiskTolerance.low else mp if risk_tolerance==RiskTolerance.medium else hp
+
+def get_loan_size_on_borrower(interest_rate,
+                              collateral,
+                              interest_preference,
+                              risk_tolerance, lrange_ir = 2, hrange_ir = 10, ):
+
+
+    if interest_rate <= lrange_ir:
+        return collateral * max_percentage_of_collateral(risk_tolerance)
+
+        
+    elif interest_rate <= hrange_ir:
+        if interest_preference == InterestRatePref.low:            
+            return 0.0 # no borrowings
+        else:
+            return collateral * max_percentage_of_collateral(risk_tolerance)
+    else:
+        if interest_preference == InterestRatePref.high:
+            return collateral * max_percentage_of_collateral(risk_tolerance)
+        else:
+            return 0.0 # no borrowings
+
+
+        
+
+     
+
+    
     

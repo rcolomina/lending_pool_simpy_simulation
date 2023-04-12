@@ -10,7 +10,6 @@ async function main() {
     console.log(`Deploying contract from contract owner: ${contractOwner[0].address}`);
 
     ////
-    
     const ERC20Dai = await ethers.getContractFactory("ERC20Dai");
     
     console.log('Deploying ERC20Dai...');
@@ -21,8 +20,7 @@ async function main() {
     syncWriteFile('../deployed_token_address_dai.txt',
                   erc20Dai.address);    
 
-    ////
-    
+    ////    
     const ERC20RubenCoin = await ethers.getContractFactory("ERC20RubenCoin");
     
     console.log('Deploying ERC20RubenCoin...');
@@ -33,10 +31,7 @@ async function main() {
     syncWriteFile('../deployed_token_address_ruben_coin.txt',
                   erc20RubenCoin.address);    
 
-
-
-    ////
-    
+    ////    
     const ERC20AlmanakCoin = await ethers.getContractFactory("ERC20AlmanakCoin");
     
     console.log('Deploying ERC20AlmanakCoin...');
@@ -46,7 +41,6 @@ async function main() {
 
     syncWriteFile('../deployed_token_address_almanak_coin.txt',
                   erc20AlmanakCoin.address);    
-
     
 }
 

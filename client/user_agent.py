@@ -3,154 +3,194 @@ import mesa
 from enums import Token
 
 from integration_test import ContractInterface
+
 from agent_models import get_percentage_on_amount_to_deposit
+from agent_models import get_loan_size_on_borrower
+
+from helpers import get_risk_tolerance
+from helpers import get_market_direction_believe
+from helpers import get_interest_rate_preference
+
+from enums import MarketDirectionBelieve
 
 
 class UserAgent(mesa.Agent):
-    def __init__(self,unique_id,
-                 model,
-                 wallet,
-                 market_direction_believe,
-                 risk_tolerance,
+    def __init__(self,
+                 unique_id,
+                 model,                 
                  user_lending_pool):
         
         super().__init__(unique_id, model)
-
-        self.risk_tolerance = risk_tolerance # for lenders
-        self.market_direction_believe = market_direction_believe
-        #self.interest_rate_preference = interest_rate_preference # for borrowers 
-
-        self.wallet = wallet
+        self.user_lending_pool = user_lending_pool
         
-        self.borrowed = {Token.Eth:0,Token.Dai:0}
-        self.collateral = {Token.Eth:0,Token.Dai:0}
 
-        self.user    = user_lending_pool
-        self.name    = user_lending_pool.name
-        self.address = user_lending_pool.address
 
-        self.contract_interface = ContractInterface(self.user,
+        ## this controls the distribution
+        ## on risk tolerance affecting the amount 
+        self.risk_tolerance    = get_risk_tolerance()
+
+        ## on market direcition affecting which coins should be selcted for both deposits and borrowings
+        self.market_direction_believe = get_market_direction_believe()
+
+        ## on interest rate preference (willingness to pay high interest rates)
+        self.interest_rate_preference = get_interest_rate_preference()
+
+        
+        self.contract_interface = ContractInterface(self.user_lending_pool,
                                                     self.model.contract)
+        self.user_name = self.user_lending_pool.name
+        self.user_address = self.user_lending_pool.address
+        
+        self.total_borrowed = 0
+        self.total_deposited = 0
 
     def __str__(self):
-        return f"name: {self.name} | wallet: {self.wallet} | borrowed: {self.borrowed} | collateral: {self.collateral} | risk tolerance: {self.risk_tolerance} | direction: {self.market_direction_believe}"
-
-    def print_agent(self):
-        print("**AGENT**")
-        print(f" -Hi, I am {self.name} with id {self.unique_id} DAI {self.wallet[Token.Dai]} ")
-        print(f" -my wallet contains --> {self.wallet}")
-        print(f" -my address risk tolerance (as lender) is {self.risk_tolerance}")
-        print("*********")
+        return f"agent_id: {self.unique_id} | risk tolerance:{self.risk_tolerance} " + \
+          "| market: {self.market_direction_believe}"
         
-    def total_borrowed(self):
-        return sum([v for _,v in self.borrowed.items()]) # Review: This does make sense
-
-    def total_collateral(self):
-        return sum([v for _,v in self.collateral.items()]) # Review: This does make sense
-
-    def health_factor(self): 
-        ## TODO: Integrate this with the contract
-        LIQUIDATION_THRESHOLD = 0.8 # TODO: Get this from the model
-        if self.totalBorrowAmount() == 0:
-            return 100        
-        return self.total_collateral() * LIQUIDATION_THRESHOLD / self.totalBorrowAmount()
-
-    def get_units_of_token(token):
-        balance = token.functions.balanceOf(self.user.address).call() // 1e18
-        return balance #self.model.
-    
-    def step(self):
-        risk_tolerance = self.risk_tolerance # for the lender                
-        market_conditions = self.model.market_conditions
-    
-        ## TO DEPOSIT
-
-        ## TODO: Check which coin to deposit on 
+    def get_collateral_borrow_for_token(self, user_address, token_address):
+        lending_pool_contract = self.model.contract
+        token_collateral, token_borrow = lending_pool_contract.functions.getUserTokenCollateralAndBorrow(user_address,
+                                                                                                       token_address).call()
         
-        ### go through the tokens checking the interest rate        
-        interest_rate = self.model.savings_interest_rate_dai # on token
+        return token_collateral, token_borrow
 
 
-        ## depends on available funds, risk tolerance
+    def deposit_on_token(self, token):
+
+        ## simulation parameters depending on num tokens some are ignored
+        if self.model.num_coins == 1 and token.address != self.model.token_dai.address:                
+            return
+        if self.model.num_coins == 2 and token.address == self.model.token_almanak_coin:
+            return
+        
+        risk_tolerance = self.risk_tolerance 
+
+        token_address = token.address
+
+        ## expected interest rate for savings
+        interest_rate = self.model.interest_rate_savings[token_address]
+        
         percent_to_deposit = get_percentage_on_amount_to_deposit(interest_rate,
                                                                  risk_tolerance)
 
-        total_dai = self.wallet[Token.Dai]
-        print("Users Dai", total_dai )
-        print("Percent % to risk on deposit: ",percent_to_deposit)
-        amount_to_deposit = percent_to_deposit * total_dai / 100
-
-
-        print("ON USER DEPOSIT PARAMS")
-        print(" Unique Id",self.unique_id)
-        print(" Name",self.name)
-        print(" Amount to deposit ", amount_to_deposit)
-        print(" Risk Tolerance", self.risk_tolerance)
+        ## total amount of funds (units) for a specific token
+        total = token.functions.balanceOf(self.user_lending_pool.address).call() // 1e18
         
-        ## if t/i high/low => deposit more/less of the availabe fundsore deposit        
-        print(f" User balance of token {self.model.token_dai.address} for the user ",
-              f"{self.user.name} is {total_dai}")
-
-        #return        
-        self.deposit(amount_to_deposit, Token.Dai)
+        amount_to_deposit = percent_to_deposit * int(total) / 100
         
-        ## TO BORROW
-        ## depends on loan size, interrest rate preference
+        
+        token_collateral, token_borrow = self.get_collateral_borrow_for_token(self.user_address,
+                                                                              token_address)
+        
+        
+        if token_collateral < amount_to_deposit * 1e18: # comparing on weis
+            remaining_to_deposit = amount_to_deposit - token_collateral // 1e18
+            print(f"Remaining to Deposit {remaining_to_deposit}")
+            #self.deposit(remaining_to_deposit, token)
 
-        # decide what to depoist and what to borrow and how much of each
+            try:
+                if remaining_to_deposit > 0:
+                    self.contract_interface.supply(token,remaining_to_deposit) # interact with the contract
+                    self.total_deposited += remaining_to_deposit 
+            except Exception as e:
+                print(f"WARNING! Deposit was reverted {e}")
+        else:
+            print(f"{self.user_name} already deposited {token_collateral // 1e18} " + \
+                  f"than its target amount {amount_to_deposit} for " + \
+                  f"its risk tolerance ({self.risk_tolerance.name})" + \
+                  f" on token {token_address}")
 
-         ## if high risk tolerance deposit 80%
-          ### check believes
-            ## if bullish/bearish deposit eth/dai and borrow dai/eth
-            ## if choppy  deposit the highest t/i and borrow on the lowest t/i
-         
-          ## loan size needs 30%, 40%, 60% of the deposit funds
-         
-         ## if low rish tolerance
-           ## go for the best t/i on stable coin at 50%, 70%, 90% of available funds
-         
-         
-        #if self.risk_tolerance > 0.5: # make this decision more interesting
-        #    token_to_borrow = Token.Eth                        
-                
-            # select token to borrow depending on risk tolerance
-        #    if token_to_borrow == Token.Eth:
-        #        ethereum = self.model.tokens[0])
-        #        loan_size = 0.5 # This should be a fraction of the total collateral for this user
-        #        self.borrow(loan_size, ethereum)
-        #else:
+
+    def get_user_data(self):
+        user_data = self.model.contract.functions.getUserData(self.user_address).call()        
+        collateral = user_data[0] / 1e18 ## total deposited in DAI
+        borrowed   = user_data[1] / 1e18 ## total borrowed in DAI
+        print(f"User Data {self.user_name}: collateral {collateral} and borrowed {borrowed} in DAIS")
+        return collateral, borrowed
+        
+    def borrow_on_token(self, token):
+
+        ## simulation parameters depending on num tokens some are ignored
+        if self.model.num_coins == 1 and token.address != self.model.token_dai.address:                
+            return
+        if self.model.num_coins == 2 and token.address == self.model.token_almanak_coin:
+            return
+                        
+        collateral, borrowed = self.get_user_data()
+        interest_rate_token  = self.model.interest_rate_borrowings[token.address]
+        loan_size_target = get_loan_size_on_borrower(interest_rate_token,
+                                                     collateral,
+                                                     self.interest_rate_preference,
+                                                     self.risk_tolerance)
+        user_address = self.user_address
+        
+        if borrowed < loan_size_target:
+            remaining_to_borrow = loan_size_target - borrowed
+            print(f"Remaining to Borrow {remaining_to_borrow}")
+            try:
+                if remaining_to_borrow > 0:
+                    self.contract_interface.borrow(token, remaining_to_borrow) # interact with the contract
+                    self.total_borrowed += remaining_to_borrow
+            except Exception as e:
+                print(f"WARNING! Borrowing was reverted {e}")                
+        else:
+            print(f"{self.user_name} already borrowed {borrowed} " + \
+                  f"than its target loan {loan_size_target} " + \
+                  f"for its risk tolerance ({self.risk_tolerance.name})")
             
-        #    pass
-                
-    def borrow(self, loan_size, token):        
-        # TODO: check health risk
-        # move loan size to token        
-        token_price = 1 #1800
-        self.borrowed[Token.Dai] += loan_size
-        self.wallet[Token.Dai] += loan_size
-        #self.wallet[Token.Dai] -= loan_size * token_price
+
+
+    def step(self):
+        ## ASSUMPTIONS
+        ##  Dai is stable coin pegged to dollar 
+        ### RubenCoin and AlmanaCoin are correlated to BTC
         
-        if token == Token.Dai:            
-            self.contract_interface.borrow(self.model.token,
-                                           loan_size)
+        ## DEPOSITING        
+        ## which one depoist (deposit the one that is going to lose value!)
+        if self.market_direction_believe == MarketDirectionBelieve.bearish:
+            self.deposit_on_token(self.model.token_dai)
+
+        if self.market_direction_believe == MarketDirectionBelieve.choppy:
+            self.deposit_on_token(self.model.token_dai)
+            self.deposit_on_token(self.model.token_ruben_coin)
+            self.deposit_on_token(self.model.token_almanak_coin)
+
+        if self.market_direction_believe == MarketDirectionBelieve.bullish:
+            self.deposit_on_token(self.model.token_ruben_coin)
+            self.deposit_on_token(self.model.token_almanak_coin)
+
+        ## TODO: ADD LOGIC TO REDEEM
         
+        ### BORROWING                        
+        if self.market_direction_believe == MarketDirectionBelieve.bearish:
+            self.borrow_on_token(self.model.token_ruben_coin)
+            self.borrow_on_token(self.model.token_almanak_coin)
 
-    def deposit(self, amount, token):
+        if self.market_direction_believe == MarketDirectionBelieve.choppy:
+            self.borrow_on_token(self.model.token_dai)
+            self.borrow_on_token(self.model.token_ruben_coin)
+            self.borrow_on_token(self.model.token_almanak_coin)
 
-        token_price = 1
-        #self.deposited
-        self.wallet[Token.Dai] -= amount * token_price
-        if token == Token.Dai:
-            #print(""self.model.token)
-            print(f"amount {amount}")
-            self.contract_interface.supply(self.model.token_dai,
-                                           amount)
+        if self.market_direction_believe == MarketDirectionBelieve.bullish:
+            self.borrow_on_token(self.model.token_dai)
 
-            #if self.dai >= amount: # only if there are enough funds
-                # ok do the borrow
-            #    self.borrow = {"dai":amount}
-            #else:
-            #    print(f"{self.name} doesn't have enough funds")
-        
+        ## TODO: Add logic to repay
 
-    
+
+        # stats for batch processing
+        collateral, borrowed = self.get_user_data()
+        self.total_borrowed = borrowed
+        self.total_deposited = collateral
+
+            
+    def repay_borrows(self):
+        # TODO
+        print(f"REPAY BORROWINGS {self.user_name}")
+        #self.total_borrowed 
+        #self.total_deposited 
+
+    def remove_collateral(self):
+        # TODO
+        print(f"REMOVE COLLATERAL {self.user_name}")
+

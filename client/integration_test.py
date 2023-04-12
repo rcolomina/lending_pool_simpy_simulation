@@ -20,7 +20,8 @@ class UserLendingPool:
     def __str__(self):
         return f"name='{self.name}'|address='{self.address}'"
 
-    def get_balance_of_token(self, token):        
+    ## wallet of the user
+    def get_balance_of_token(self, token): 
         token_name = token.functions.name().call()
         decimals   = token.functions.decimals().call()        
         return token.functions.balanceOf(self.address).call() // 10 ** decimals
@@ -55,31 +56,20 @@ def print_user_data(user, user_data, DECIMALS):
           f"| totalBorrow: {user_data[1] // DECIMALS} DAIs")
 
 def header(action, user, token, amount):
-    #print("user",user)
-    #print("token",token)
-    #print("in header amount",amount)
     DECIMALS = get_decimals(token)
     print(f"Action={action} the amount {amount } units from user address {user.address} ")
     print(f"token the {token.address}")
 
-
 ## add supply tokens to the pool
 def print_action(actor, action, amount, token_address):
     print(f"{actor} is {action} an amount of {amount} units of the token address {token_address}")
-
     
 def get_decimals(contract_token):
     decimals = contract_token.functions.decimals().call()
     #print(f"No. of decimals for token {token_name}: {decimals}")
     return 10 ** decimals 
 
-
 def aprove(user, contract, token, amount):
-    #print("user",user.address)
-    #print("contract",contract.address)
-    #print("token",token.address)
-    #print("amount",amount)
-    
     tx_hash = token.functions.approve(contract.address, amount).transact({'from':user.address})    
 
 def log_in_out(func):
@@ -101,23 +91,17 @@ def supply(user, contract, token, amount, verbose=True):
     aprove(user, contract, token, amount)
     contract.functions.supply(token.address,
                               amount).transact({'from':user.address})    
-    #print_user_data(user, get_user_data(user), decimals)
 
 @log_in_out
 def repay(user, contract, token, amount, verbose=True):
     aprove(user, contract, token, amount)
     contract.functions.repay(token.address, amount).transact({'from':user.address})
-    #print_user_data(user, get_user_data(user), decimals)
 
 @log_in_out
 def borrow(user, contract, token, amount, verbose=True):
     decimals = get_decimals(token)
     amount = int(decimals * amount)
     contract.functions.borrow(token.address, amount).transact({'from':user.address})
-    
-    #print_user_data(user, get_user_data(user), decimals)
-
-
 
 class ContractInterface:
     def __init__(self, user, contract):
@@ -135,36 +119,32 @@ class ContractInterface:
         pass
 
     def borrow(self, token, amount):
-        #    header("Borrowing",  self.user, token, amount)
         borrow(self.user, self.contract, token, amount)
         
     def repay(self, token, amount):
-        #    header("Repaying",  self.user, token, amount)
         repay(self.user, self.contract, token, amount)
 
     def get_user_data(self): 
         supply, borrow = self.contract.functions.getUserData(self.user.address).call()
-
         unit_of_account = 1e18
-              
         return {"totalCollateral":supply // unit_of_account,
                 "totalBorrow":    borrow // unit_of_account}
 
-    def total_deposited_on_token(self, token):
-        #print("total_deposited_on_token of ",token.address)
-        self.token_vault = self.contract.functions.getTokenVault(token.address).call()
-        #print(self.token_vault)
-        return 100000
-                
-    def total_borrowed_on_token(self, token):
-        self.token_vault = self.contract.functions.getTokenVault(token.address).call()
-        #print(self.token_vault)
-        return 500
+    def get_token_vault(self,token_address, weis=False):
+        ## vault returns (amount,shares) for both deposits and borrows
+        return self.contract.functions.getTokenVault(token_address).call() 
 
-
-
+    def get_total_assets_amount(self,token, weis=False):
+        #factor = 10 ** token.functions.decimals().call() if weis else 1
+        factor = 1e18 
+        return self.contract.functions.getTokenTotalAssetsAmount(token.address).call() // factor
         
+    def get_total_borrow_amount(self,token, weis=False):
+        #factor = 10 ** token.functions.decimals().call() if weis else 1
+        factor = 1e18 
+        return self.contract.functions.getTokenTotalBorrowAmount(token.address).call() // factor
     
+            
 
 if __name__ == "__main__":
 
@@ -210,8 +190,6 @@ if __name__ == "__main__":
     #token_address = contract_token.address
     #print(f"Transfering {amount_to_transfer // DECIMALS} units of token ",
     #      f"{token_name} from {manager.name} to {leader.name}")
-
-
     
     #tx_hash = contract_token.functions.transfer(leader.address,
     #                                            amount_to_transfer).transact({'from': manager.address})
@@ -220,11 +198,7 @@ if __name__ == "__main__":
     #      manager.get_balance_of_token(contract_token))
     #print(f"Leader's balance for token {contract_token.address}",
     #      leader.get_balance_of_token(contract_token))     
-    #contract_token.functions.balanceOf(manager.address).call() // DECIMALS)
-          
-
     #contract_token.functions.balanceOf(leader.address).call() // DECIMALS)
-    
 
     ## supply require to approve for external transfers (contract)
     user     = manager

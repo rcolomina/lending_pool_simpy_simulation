@@ -1,5 +1,3 @@
-
-
 node:
 	npx hardhat node
 
@@ -9,6 +7,6 @@ deploy:
 add-token:	
 	npx hardhat run --network localhost scripts/add-token.ts
 
-
 export-abi:
 	npm install --save-dev hardhat-abi-exporter
+

@@ -1,9 +1,13 @@
+// SPDX-License-Identifier: MIT
+
 pragma solidity 0.8.10;
 
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./libraries/VaultAccounting.sol";
 import "./libraries/InterestRate.sol";
+
+
 
 contract LendingPool {
     using VaultAccountingLibrary for Vault;
@@ -464,7 +468,7 @@ contract LendingPool {
         if (msg.sender != manager) revert OnlyManager();
         if (supportedTokens[token].supported) revert AlreadySupported(token);
 
-        supportedTokens[token].lastDaiPriceKnown = 42; // default value
+        supportedTokens[token].lastDaiPriceKnown = 1.0; // 1DAI default value
 
         //supportedTokens[token].daiPriceFeed = priceFeed;
         supportedTokens[token].supported = true;

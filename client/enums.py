@@ -5,7 +5,7 @@ class Token(Enum):
     Eth = 1
     Dai = 2
     RubenCoin = 3
-    Alamanak = 4
+    Almanak = 4
     ## add more tokens
 
 class RiskTolerance(Enum):
@@ -18,19 +18,13 @@ class MarketDirectionBelieve(Enum):
     choppy = 1
     bullish = 2
 
+class InterestRatePref(Enum):
+    low = 0
+    medium = 1
+    high = 2
 
 
-
-
-################################
-class IRPreference(Enum):
+class TypeInterestRatePref(Enum):
     VARIABLE = 1
     FIX = 2
 
-class AFPreference(Enum):
-    LOW = 1
-    HIGH = 2
-
-class Risk(Enum):
-    LOW = 1
-    HIGH = 2

@@ -1,4 +1,5 @@
 from web3 import Web3
+
 import random
 random.seed(42)
 
@@ -12,14 +13,14 @@ def print_receipt(tx_hash, topic):
     print(f"Transaction {topic} receipt mined:")
     print("Was transaction successful?", receipt["status"])
 
-
-
 def get_random_choice(lrange=1/3.0, hrange=2/3.0, values=[]):
     r = random.uniform(0,1)
     return values[0] if r > hrange else values[1] if r > lrange else values[2]
 
 from enums import RiskTolerance
 from enums import MarketDirectionBelieve
+from enums import InterestRatePref
+
 
 def get_risk_tolerance(lrange = 1/3.0,
                        hrange = 2/3.0,
@@ -28,11 +29,20 @@ def get_risk_tolerance(lrange = 1/3.0,
                                RiskTolerance.low]):
     return get_random_choice(lrange,hrange,values)
 
+
 def get_market_direction_believe(lrange = 1/3.0,
                                  hrange = 2/3.0, 
                                  values=[MarketDirectionBelieve.bullish,
                                          MarketDirectionBelieve.choppy,
                                          MarketDirectionBelieve.bearish]):
+    return get_random_choice(lrange, hrange ,values)
+
+
+def get_interest_rate_preference(lrange = 1/3.0,
+                                 hrange = 2/3.0, 
+                                 values=[InterestRatePref.low,
+                                         InterestRatePref.medium,
+                                         InterestRatePref.high]):
     return get_random_choice(lrange, hrange ,values)
 
 
