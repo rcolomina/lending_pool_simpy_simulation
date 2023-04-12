@@ -1,7 +1,9 @@
 from enums import RiskTolerance
 from enums import MarketDirectionBelieve
 
-    
+
+
+
 def get_percentage_on_amount_to_deposit(interest_rate,
                                         risk_tolerance, 
                                         alpha=1.0, 
@@ -27,10 +29,16 @@ def get_percentage_on_amount_to_deposit(interest_rate,
     # linear model on interest rate
     model =  alpha + beta * interest_rate
     
-    return min(max_deposit, model )
+    return min(max_deposit, model)
 
 
+def get_loan_size_on_borrower(total_collateral,risk_tolerance):
 
-def get_loan_size_on_borrower(interest_rate_preference):
-    pass
+    if risk_tolerance == RiskTolerance.high:
+        return total_collateral * 0.75
+    if risk_tolerance == RiskTolerance.medium:
+        return total_collateral * 0.50
+    if risk_tolerance == RiskTolerance.low:
+        return total_collateral * 0.25
+
     
