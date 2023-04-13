@@ -1,11 +1,15 @@
 # Lending Pool Simpy Simulation
 
-This is a python mesa simulation integrated along with a lending pool contract solidity contract. The setup uses hardhat and web3 wrapper python client to interact, change and monitor the state of contract.
+This is a python mesa simulation integrated along with a lending pool contract solidity contract. 
+
+The setup uses hardhat and web3 wrapper python client to interact, change and monitor the state of contract.
 
 ## Solidity Contract Setup and Hardhat Node
 
 First clone this reposity from a terminal on your local machine. 
+
 Install the npm dependencies using `npm install`. This will create `node_modules` folder in the repository.
+
 After succesfully install `npm`, do `make node` which will start the hardhat node on your. The node should open a websocked JSON-RPC at `http://127.0.0.1:8545` by default.
 
 ```
@@ -30,8 +34,12 @@ Private Key: 0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a
 ...
 ```
 Be aware that the account provided by hardhat are HD i.e. deterministic, and you shoudln't use them for other purposed than testing. 
+
 Now, open a second terminal, from which you will deploy the contract and its tokens. 
-Do `make deploy`, which will compile and deploy the lending pool giving you back a contract address. This will create a text file `deployed_contract_address.txt` of the current contract address. This will be read by the python simulations later.
+
+Do `make deploy`, which will compile and deploy the lending pool giving you back a contract address. This will create a text file 
+`deployed_contract_address.txt` of the current contract address. This will be read by the python simulations later.
+
 Now, do `make add-tokens`, which should add the tokens that the contract will have available for borrowing and lending. 
 ```
 ~/lending_pool_simpy_simulation$ make add-tokens
@@ -48,24 +56,30 @@ Erc20AlmanakCoin deployed to: 0xE65B75e7A8de220bcfec86F58c4c25A62aB7CD9b
 0xE65B75e7A8de220bcfec86F58c4c25A62aB7CD9b
 
 ```
-As before, be aware that the token addresses created above are completely random for testing purposes. 
-This will create a set of text files that will be read later by the python simulation
-Now the contract and its environment have been setup, and now it's time to setup the python mesa simulator
+As before, be aware that the token addresses created above are completely random for testing purposes. This will create a set of text files that will be read later by the python simulation. Now the contract and its environment have been setup, and now it's time to setup the python mesa simulator
 
 # Simulation Setup
 
 Access to `client` folder and create a virtual environment `virtualenv env --python=python3.9` (3.9 works for me)
+
 Enable the environment using `source env/bin/activate` 
+
 Install the python requirements via `pip install -r requiremenets.txt` and wait and it finish succesfully.
+
 At this point you can run the simulation either a single instance or a batch of them
+
 To run a single instance do `run-simulation-single.sh` which will populate the local blockchain.
+
 To run a batch of simulations do `run-simulation-batch.sh`
+
 The two of the simulation executiosn will end up producing performance profile `svg` files
 
 # Analysing and Monitoring the Results
 
 Open a new terminal over the `client` folder, and enable as before the environment.
+
 Run `jupyter notebook` to launch this server. 
+
 Open the brower and run all cell to see the simulation results
 
 
