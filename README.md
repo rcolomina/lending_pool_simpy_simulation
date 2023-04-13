@@ -1,10 +1,14 @@
-# Lending Pool Mesa Simulation
+# Lending Pool Simulation
 
-This is a python mesa simulation integrated along with a lending pool contract solidity contract. 
+This is a python mesa framework to simulate a lending pool contract interactions happening during its utilization by a set of borrowers and lenders which are simulated as agents. 
 
-The setup uses hardhat and web3 wrapper python client to interact, change and monitor the state of contract.
+This repository uses hardhat and a web3 wrapper in python as client to interact with contract, changing and monitoring its state.
 
-## Solidity Contract Setup and Hardhat Node
+Additonally, there is a jupyter notebook at the client folder, helping to visualize the results from the simulations. 
+
+The main reference of this repo can be found at the docs folder, in which different interest rate models for lending pools are explained in details. This simulations and solidity contract implements a simple linear interest rate model similar to AAVE but simpler. 
+
+## Contract (Solidity) and Hardhat Node Setup
 
 First clone this reposity from a terminal on your local machine. 
 
