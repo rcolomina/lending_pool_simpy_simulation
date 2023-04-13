@@ -1,6 +1,6 @@
 # Lending Pool Simulation
 
-This is a python mesa framework to simulate a lending pool contract interactions happening during its utilization by a set of borrowers and lenders which are simulated as agents. 
+This is a python mesa simulations of a lending pool allowing to simulated borrowers and lenders interacting with the contract as agents. The agents have a pseudo-random behaviour regarding on how much units and what coins to borrow or lend among the tokens included in the protocol.
 
 This repository uses hardhat and a web3 wrapper in python as client to interact with contract, changing and monitoring its state.
 
