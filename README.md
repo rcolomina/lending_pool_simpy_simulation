@@ -10,7 +10,9 @@ First clone this reposity from a terminal on your local machine.
 
 Install the npm dependencies using `npm install`. This will create `node_modules` folder in the repository.
 
-After succesfully install `npm`, do `make node` which will start the hardhat node on your. The node should open a websocked JSON-RPC at `http://127.0.0.1:8545` by default.
+After succesfully install `npm` dependencies, do `make node` which will start the hardhat node on your machine. 
+
+Hardhat node should open a websocked JSON-RPC at `http://127.0.0.1:8545` by default.
 
 ```
 npx hardhat node
@@ -33,7 +35,7 @@ Private Key: 0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a
 
 ...
 ```
-Be aware that the account provided by hardhat are HD i.e. deterministic, and you shoudln't use them for other purposed than testing. 
+Hardhat node create until 20 accounts to play with. Be aware that the account provided by hardhat are HD i.e. deterministic, and you shoudln't use them for other purposed than testing. 
 
 Now, open a second terminal, from which you will deploy the contract and its tokens. 
 
