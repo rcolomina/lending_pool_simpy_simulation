@@ -4,7 +4,7 @@ node:
 deploy:
 	npx hardhat run --network localhost scripts/deploy.ts
 
-add-token:	
+add-tokens:	
 	npx hardhat run --network localhost scripts/add-token.ts
 
 export-abi:
