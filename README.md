@@ -1,4 +1,4 @@
-# Lending Pool Simpy Simulation
+# Lending Pool Mesa Simulation
 
 This is a python mesa simulation integrated along with a lending pool contract solidity contract. 
 
