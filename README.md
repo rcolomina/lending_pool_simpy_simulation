@@ -2,9 +2,9 @@
 
 This is a python mesa simulations of a lending pool allowing to simulated borrowers and lenders interacting with the contract as agents. The agents have a pseudo-random behaviour regarding on how much units and what coins to borrow or lend among the tokens included in the protocol.
 
-This repository uses hardhat and a web3 wrapper in python as client to interact with contract, changing and monitoring its state.
+This repository uses hardhat and a web3 wrapper in python as client to interact with the contract. The client allows to push and pull data from the state of the contract from the simulator.
 
-Additonally, there is a jupyter notebook at the client folder, helping to visualize the results from the simulations. 
+Additonally, this repo provides a jupyter notebook within the client folder. This is using the same web3 client as the simulation, and helps to visualize the results before, during and after the simulation. 
 
 The main reference of this repo can be found at the docs folder, in which different interest rate models for lending pools are explained in details. This simulations and solidity contract implements a simple linear interest rate model similar to AAVE but simpler. 
 
