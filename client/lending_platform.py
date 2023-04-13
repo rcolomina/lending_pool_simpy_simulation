@@ -226,7 +226,7 @@ class LendingPlatform(mesa.Model):
         # TODO: Go through out all the agents seeing whether conditions for liquidatioan are met
         for agent in self.agents:
             account = agent.user_address
-            health_factor = self.contract.functions.healthFactor(account)
+            health_factor = self.contract.functions.healthFactor(account).call() // 1e18
             print("Calculate Health Factor =", health_factor)
             
             #self.contract.functions.liquidate(account, collateral, user_borrow_token, amount_to_liquidate).transact
