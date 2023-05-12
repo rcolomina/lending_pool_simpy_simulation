@@ -64,7 +64,7 @@ Erc20AlmanakCoin deployed to: 0xE65B75e7A8de220bcfec86F58c4c25A62aB7CD9b
 ```
 As before, be aware that the token addresses created above are completely random for testing purposes. This will create a set of text files that will be read later by the python simulation. Now the contract and its environment have been setup, and now it's time to setup the python mesa simulator
 
-# Simulation Setup
+## Simulation Setup
 
 Access to `client` folder and create a virtual environment `virtualenv env --python=python3.9` (3.9 works for me)
 
@@ -80,7 +80,7 @@ To run a batch of simulations do `run-simulation-batch.sh`
 
 The two of the simulation executiosn will end up producing performance profile `svg` files
 
-# Analysing and Monitoring the Results
+## Analysing and Monitoring the Results
 
 Open a new terminal over the `client` folder, and enable as before the environment.
 
